@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fishbone Diagram Analyzer V2.5.1</title>
+<style>
+:root{--page-bg:#f4f7fb;--panel-bg:#fff;--text:#183153;--muted:#66788a;--border:#d9e2ec;--title-bg:#f7faff;--table-head:#edf4fc;--accent:#176dbf;--accent-contrast:#fff;--header1:#0b4f8a;--header2:#1684d8}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--page-bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--header1),var(--header2));color:#fff;padding:20px 26px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+h1{font-size:26px;margin:0}.sub{font-size:13px;opacity:.9;margin-top:5px}.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.version-info{text-align:right;line-height:1.5;white-space:nowrap}.version{font-weight:bold}.date,.credit{font-size:12px;opacity:.9}
+button,input,select,textarea{font:inherit}button{border:1px solid var(--border);background:var(--panel-bg);color:var(--text);padding:8px 11px;border-radius:7px;cursor:pointer}button:hover{filter:brightness(.96)}button:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent)}
+.theme-bar{max-width:1500px;margin:12px auto 0;padding:0 18px;display:flex;justify-content:flex-end;gap:8px;align-items:center;color:var(--muted);font-size:12px}.theme-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--panel-bg);color:var(--text)}
+main{max-width:1500px;margin:16px auto;padding:0 18px}.panel{background:var(--panel-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;box-shadow:0 3px 14px #14325a12;overflow:hidden}.title{padding:12px 16px;background:var(--title-bg);border-bottom:1px solid var(--border);font-weight:bold;display:flex;justify-content:space-between;gap:12px;align-items:center}.title small{font-weight:normal;font-size:12px;color:var(--muted)}
+.fields{padding:14px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.field label{display:block;font-size:12px;color:var(--muted);font-weight:bold;margin-bottom:5px}.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:6px;background:var(--panel-bg);color:var(--text)}.field textarea{min-height:66px;resize:vertical}.run{padding:0 14px 14px;text-align:right}
+.notice{padding:12px;margin:12px 14px;background:var(--title-bg);border-left:4px solid var(--accent);border-radius:6px;line-height:1.5}.toolbar,.result-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center;padding:10px 14px}.hint{margin-left:auto;font-size:12px;color:var(--muted)}
+.sheet{overflow:auto;max-height:510px}table{border-collapse:collapse;width:max-content;min-width:100%}th,td{border:1px solid var(--border);height:35px}thead th{position:sticky;top:0;background:var(--table-head);z-index:3}.corner,.rowhead{background:var(--title-bg)}.corner{position:sticky;left:0;z-index:5;cursor:pointer}.rowhead{position:sticky;left:0;z-index:2;width:48px;min-width:48px;text-align:center;color:var(--muted);cursor:pointer}.col-head{min-width:150px}.colname{padding:3px}.colname input{width:100%;border:0;background:transparent;text-align:center;font-weight:bold;color:var(--text);padding:4px}.cell{min-width:150px}.cell input,.cell select{width:100%;height:34px;border:0;padding:6px 8px;outline:none;background:transparent;color:var(--text)}.cell input:focus,.cell select:focus{box-shadow:inset 0 0 0 2px #5aa1ed}.selected-cell{background:#dcecff!important}.selected-header{background:#b9d9f7!important;color:#123d67}.status{padding:8px 14px;color:var(--muted);font-size:12px;border-top:1px solid var(--border)}.selection-info{font-weight:bold;color:var(--text);margin-left:12px}
+.diagram-wrap{padding:12px;overflow:auto}.diagram-wrap svg{width:100%;min-width:850px;height:auto;display:block;background:var(--panel-bg);border:1px solid var(--border);border-radius:8px}.diagram-note{padding:0 14px 14px;color:var(--muted);font-size:12px;line-height:1.5}
+.graph-settings input[type=color]{height:40px;padding:3px;cursor:pointer}
+.cause-label-settings{border-top:1px solid var(--border);padding:12px 14px;background:var(--panel-bg)}.cause-label-settings .fields{padding:0}.bottom-actions{padding:14px}.statusline{font-size:12px;color:var(--muted);padding:0 14px 12px;min-height:18px}
+body.theme-light{--page-bg:#fff;--panel-bg:#fff;--text:#222;--muted:#666;--border:#ddd;--title-bg:#fafafa;--table-head:#f0f0f0;--accent:#333;--header1:#555;--header2:#888}body.theme-light .panel{box-shadow:none;border-radius:4px}
+body.theme-dark{--page-bg:#0b1117;--panel-bg:#18232d;--text:#e8f1f8;--muted:#aab9c7;--border:#344756;--title-bg:#1d2b37;--table-head:#213d4a;--accent:#267fc4;--header1:#02070b;--header2:#152a3b}body.theme-dark .selected-cell{background:#28536a!important}
+body.theme-minimal{--page-bg:#f8f8f8;--panel-bg:#fff;--text:#222;--muted:#666;--border:#bbb;--title-bg:#e8e8e8;--table-head:#eee;--accent:#444;--header1:#303030;--header2:#555}body.theme-minimal .panel{border-radius:2px;box-shadow:none}body.theme-minimal button{border-radius:2px}
+body.theme-pastel{--page-bg:#fff2f8;--panel-bg:#fffaff;--text:#65465f;--muted:#866f8d;--border:#e8c8df;--title-bg:#ffe6f3;--table-head:#f9e5f5;--accent:#9c5b88;--header1:#9c5b88;--header2:#e09ac6}body.theme-pastel .panel{border-radius:16px;box-shadow:0 8px 22px #b464a01f}body.theme-pastel button{border-radius:18px}
+body.theme-digital{--page-bg:#02090c;--panel-bg:#06171d;--text:#baf7ff;--muted:#8bc4cc;--border:#075866;--title-bg:#09252d;--table-head:#123b45;--accent:#087f91;--header1:#00171e;--header2:#003640}body.theme-digital .panel{box-shadow:0 0 16px #00e5ff14}
+@media(max-width:900px){.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){header{align-items:flex-start;flex-direction:column}h1{font-size:22px}.version-info{text-align:left}.fields{grid-template-columns:1fr}.hint{width:100%;margin-left:0}}
+@media print{.theme-bar,.header-actions button,.toolbar,.result-actions,.run,footer{display:none!important}body{background:#fff;color:#111}.panel{box-shadow:none;break-inside:avoid}header{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style></head>
+<body class="theme-blue">
+<header><div><h1>Fishbone Diagram Analyzer</h1><div class="sub">Cause &amp; Effect Diagram • Ishikawa • Root Cause Analysis</div></div><div class="header-actions"><div class="version-info"><div class="version">Version V2.5.1</div><div class="date">Updated: 2026-11-13</div><div class="credit">Developed by Somchard</div></div><button onclick="loadDemo()">Load Demo</button><button onclick="resetAll()">Reset</button></div></header>
+<div class="theme-bar">🎨 Theme <select id="themeSelect" onchange="setTheme(this.value)"><option value="blue">Blue</option><option value="light">Light</option><option value="dark">Dark</option><option value="minimal">Minimal</option><option value="pastel">Pastel</option><option value="digital">Digital</option></select></div>
+<main>
+<div class="panel"><div class="title"><span>🎯 Problem Statement / Effect</span><small>Define the problem to be investigated</small></div><div class="fields">
+<div class="field" style="grid-column:span 2"><label>Problem / Effect</label><input id="problem" value="" placeholder="e.g. High defect rate in PreLAM process" oninput="drawDiagram()"></div>
+<div class="field"><label>Category Template</label><select id="template" onchange="applyTemplate()"><option value="6M">6M – Manufacturing</option><option value="4M">4M – Basic Manufacturing</option><option value="8P">8P – Service / Business</option><option value="custom">Custom</option></select></div>
+<div class="field"><label>Diagram Title</label><input id="diagramTitle" value="Cause & Effect Analysis" oninput="drawDiagram()"></div>
+</div><div class="run"><button onclick="loadDemo()">Load Example</button> <button class="primary" onclick="drawDiagram()">↻ Update Diagram</button></div></div>
+<div class="panel" id="customEditor" style="display:none"><div class="title"><span>🧩 Custom Category Builder</span><small>Create 2–10 categories and assign each branch to the top or bottom</small></div><div class="fields"><div class="field"><label>New Category Name</label><input id="newCategoryName" placeholder="e.g. Equipment, System, Supplier"></div><div class="field"><label>Branch Position</label><select id="newCategorySide"><option value="Top">Top</option><option value="Bottom">Bottom</option></select></div><div class="field" style="align-self:end"><button onclick="addCustomCategory()">＋ Add Category</button></div></div><div id="customCategoryList"></div><div class="hint">Minimum 2 and maximum 10 categories. Changes are applied to the Worksheet and Diagram.</div>
+<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">
+ <div class="title"><span>💾 Saved Custom Templates</span><small>Save and reuse your category configurations</small></div>
+ <div class="fields">
+  <div class="field"><label>Template Name</label><input id="customTemplateName" placeholder="e.g. Machine Failure Analysis"></div>
+  <div class="field" style="align-self:end"><button onclick="saveCustomTemplate()">Save Template</button></div>
+  <div class="field" style="align-self:end"><button onclick="exportCustomTemplate()">Export Template</button></div>
+  <div class="field" style="align-self:end"><button onclick="document.getElementById('importCustomTemplateFile').click()">Import Template</button><input id="importCustomTemplateFile" type="file" accept=".json,application/json" style="display:none" onchange="importCustomTemplate(event)"></div>
+ </div>
+ <div id="savedCustomTemplates"></div>
+</div></div><div class="panel"><div class="title"><span>🐟 Fishbone Diagram</span><small>Adaptive layout from worksheet data</small></div><div class="diagram-wrap"><svg id="fishbone" viewBox="0 0 1200 700" role="img" aria-label="Fishbone cause and effect diagram"></svg></div><div class="diagram-note">Edit causes in the worksheet below. The diagram updates automatically. V2.5.1 adjusts branch length and cause-label spacing based on the number of causes in each lane.</div><div class="result-actions bottom-actions"><button onclick="copyDiagramImage()">🖼️ Copy Diagram PNG</button><button onclick="downloadDiagramImage()">⬇️ Download Diagram PNG</button><button onclick="copyWorksheetData()">📑 Copy Worksheet Data</button><button onclick="exportJSON()">Export JSON</button><button onclick="window.print()">🖨 Print</button></div><div class="statusline" id="imageStatus"></div></div>
+<div class="panel"><div class="title"><span>🎨 Diagram Color Settings</span><small>Customize the appearance of diagram elements</small></div><div class="fields graph-settings">
+<div class="field"><label>Spine / Main Bone</label><input type="color" id="spineColor" value="#334155" onchange="drawDiagram()"></div><div class="field"><label>Branch Color</label><input type="color" id="branchColor" value="#176dbf" onchange="drawDiagram()"></div><div class="field"><label>Category Color</label><input type="color" id="categoryColor" value="#0b4f8a" onchange="drawDiagram()"></div><div class="field"><label>Cause Text Color</label><input type="color" id="causeColor" value="#334155" onchange="drawDiagram()"></div><div class="field"><label>Effect Box Color</label><input type="color" id="effectColor" value="#d97706" onchange="drawDiagram()"></div><div class="field"><label>Background Color</label><input type="color" id="diagramBg" value="#ffffff" onchange="drawDiagram()"></div>
+<div class="field"><label>Effect / Fish Head Shape</label><select id="headShape" onchange="drawDiagram()"><option value="fish" selected>Standard Fish (Reference Head + Tail)</option>
+<option value="dshape">D Shape</option><option value="diamond">Diamond</option>
+<option value="rounded">Rounded Rectangle</option><option value="rectangle">Rectangle</option>
+<option value="oval">Oval</option><option value="arrow">Arrow</option></select></div>
+<div class="field"><label>Cause Text Size</label><select id="causeFontSize" onchange="drawDiagram()"><option value="16">Small (16)</option><option value="18" selected>Medium (18)</option><option value="20">Large (20)</option><option value="22">Extra Large (22)</option></select></div><div class="field"><label>Effect Text Size (Fish Head)</label><select id="effectFontSize" onchange="drawDiagram()"><option value="18">Small (18)</option><option value="20" selected>Medium (20)</option><option value="22">Large (22)</option><option value="24">Extra Large (24)</option></select></div>
+<div class="field"><label>Cause Text Offset</label><input type="range" id="textOffset" min="0" max="90" value="25" oninput="document.getElementById('offsetValue').textContent=this.value+' px';drawDiagram()"><small id="offsetValue">25 px</small></div>
+<div class="field"><label>Branch Angle</label><select id="branchAngle" onchange="drawDiagram()"><option value="45">45°</option><option value="55" selected>55°</option><option value="65">65°</option></select></div>
+<div class="field"><label>Cause Spacing</label><select id="causeSpacing" onchange="drawDiagram()"><option value="compact">Compact</option><option value="normal" selected>Normal</option><option value="wide">Wide</option></select></div><div class="field" style="grid-column:1/-1"><label>Individual Category Colors</label><div id="categoryColors" style="display:flex;flex-wrap:wrap;gap:12px"></div></div>
+</div><div class="cause-label-settings"><div style="font-weight:bold;margin-bottom:10px">🏷️ Cause Label Settings</div><div class="fields">
+<div class="field"><label>Enable Background</label><select id="labelBgEnabled" onchange="drawDiagram()"><option value="off">Off</option><option value="on" selected>On</option></select></div>
+<div class="field"><label>Label Style</label><select id="labelStyle" onchange="drawDiagram()"><option value="rounded" selected>Rounded</option><option value="rectangle">Rectangle</option><option value="highlight">Highlight</option></select></div>
+<div class="field"><label>Background Color Mode</label><select id="labelColorMode" onchange="drawDiagram()"><option value="category" selected>Use Category Color</option><option value="custom">Use Custom Color</option></select></div>
+<div class="field"><label>Custom Background Color</label><input type="color" id="labelBgColor" value="#DCEEFF" onchange="drawDiagram()"></div>
+<div class="field"><label>Background Opacity</label><input type="range" id="labelOpacity" min="10" max="100" value="24" oninput="document.getElementById('labelOpacityValue').textContent=this.value+'%';drawDiagram()"><small id="labelOpacityValue">24%</small></div>
+<div class="field"><label>Label Padding</label><select id="labelPadding" onchange="drawDiagram()"><option value="4">Compact</option><option value="8" selected>Normal</option><option value="12">Wide</option></select></div>
+</div></div><div class="fields">
+</div></div>
+<div class="panel"><div class="title"><span>📋 Cause Worksheet</span><small>100 Rows × 6 Columns • Excel-style Copy/Paste</small></div><div class="toolbar"><button onclick="addRow()">＋ Row</button><button onclick="delRow()">− Row</button><button id="undoBtn" onclick="undo()">↶ Undo</button><button id="redoBtn" onclick="redo()">↷ Redo</button><button onclick="clearSelectedRange()">Clear Selected</button><button onclick="clearAll()">Clear All</button><button onclick="exportCSV()">Export CSV</button><button onclick="loadDemo('6M')">Demo 6M</button><button onclick="loadDemo('4M')">Demo 4M</button><button onclick="loadDemo('8P')">Demo 8P</button><span class="hint">Paste from Excel • Drag / Shift+Click • Enter ↓ • Tab → • Ctrl+C / Ctrl+V</span></div><div class="sheet" id="sheet"></div><div class="status"><span id="statusText">100 rows × 6 columns</span><span id="selectionInfo" class="selection-info">Selected: Row 1 / Category</span></div></div>
+<div class="notice"><b>V2.5.1 update:</b> Adaptive branch length and independent cause-label spacing for the 6M, 4M and 8P templates. Existing worksheet editing, Excel-compatible copy/paste, keyboard navigation, Undo/Redo, six themes, diagram color settings and PNG export are retained.</div>
+</main><footer style="text-align:center;padding:15px;color:var(--muted);font-size:12px">Fishbone Diagram Analyzer V2.5.1 · Developed by Somchard</footer>
+<script>
+const DEFAULT_ROWS=100,DEFAULT_COLS=6,THEMES=['blue','light','dark','minimal','pastel','digital'];
+const TEMPLATES={
+'6M':['Man','Machine','Material','Method','Measurement','Mother Nature / Environment'],
+'4M':['Man','Machine','Method','Material'],
+'8P':['Product','Price','Place','Promotion','People','Process','Physical Evidence','Productivity']
+};
+let CUSTOM_CATEGORIES=[{name:'Man',color:'#3182CE',side:'Top'},{name:'Machine',color:'#0D9488',side:'Top'},{name:'Method',color:'#D97706',side:'Top'},{name:'Material',color:'#8B5CF6',side:'Bottom'},{name:'Measurement',color:'#16A34A',side:'Bottom'},{name:'Environment',color:'#E34B68',side:'Bottom'}];
+let R=DEFAULT_ROWS,C=DEFAULT_COLS,D=[],H=['Category','Main Cause','Sub-cause','Priority','Text Side','Notes'],hist=[],future=[],selectionStart={r:0,c:0},selectionEnd={r:0,c:0},isSelecting=false,editingCellKey='';
+const $=id=>document.getElementById(id);
+function initData(){D=Array.from({length:R},()=>Array(C).fill(''))}
+function setTheme(n){THEMES.forEach(t=>document.body.classList.remove('theme-'+t));document.body.classList.add('theme-'+n);$('themeSelect').value=n;try{localStorage.setItem('fishboneTheme',n)}catch(e){}}
+function snapshot(){return JSON.stringify({D,H,R,C,problem:$('problem').value,template:$('template').value,customCategories:CUSTOM_CATEGORIES})}
+function save(){hist.push(snapshot());if(hist.length>50)hist.shift();future=[];updateUndo()}
+function restore(s){const o=JSON.parse(s);D=o.D;H=o.H;R=o.R;C=o.C;CUSTOM_CATEGORIES=o.customCategories||CUSTOM_CATEGORIES;$('problem').value=o.problem||'';$('template').value=o.template||'6M';renderCategoryColors();renderCustomEditor();render();updateUndo()}
+function undo(){if(hist.length){future.push(snapshot());restore(hist.pop())}}
+function redo(){if(future.length){hist.push(snapshot());restore(future.pop())}}
+function updateUndo(){$('undoBtn').disabled=!hist.length;$('redoBtn').disabled=!future.length}
+function esc(s){return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function normalize(){let e=selectionEnd||selectionStart;return{r1:Math.min(selectionStart.r,e.r),r2:Math.max(selectionStart.r,e.r),c1:Math.min(selectionStart.c,e.c),c2:Math.max(selectionStart.c,e.c)}}
+function getCategories(){return $('template').value==='custom'?CUSTOM_CATEGORIES.map(x=>x.name):(TEMPLATES[$('template').value]||TEMPLATES['6M'])}
+function renderCustomEditor(){
+ const panel=$('customEditor');if(!panel)return;
+ panel.style.display=$('template').value==='custom'?'block':'none';
+ const host=$('customCategoryList');if(!host)return;
+ host.innerHTML=CUSTOM_CATEGORIES.map((cat,i)=>`<div style="display:grid;grid-template-columns:minmax(120px,1fr) 110px 48px auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)"><input aria-label="Category name" value="${esc(cat.name)}" onchange="updateCustomCategory(${i},'name',this.value)"><select aria-label="Branch position" onchange="updateCustomCategory(${i},'side',this.value)"><option value="Top" ${cat.side==='Top'?'selected':''}>Top</option><option value="Bottom" ${cat.side==='Bottom'?'selected':''}>Bottom</option></select><input aria-label="Category color" type="color" value="${cat.color}" onchange="updateCustomCategory(${i},'color',this.value)"><div style="display:flex;gap:3px"><button onclick="moveCustomCategory(${i},-1)" ${i===0?'disabled':''}>↑</button><button onclick="moveCustomCategory(${i},1)" ${i===CUSTOM_CATEGORIES.length-1?'disabled':''}>↓</button><button onclick="removeCustomCategory(${i})" ${CUSTOM_CATEGORIES.length<=2?'disabled':''}>×</button></div></div>`).join('');
+}
+function applyCustomChanges(){renderCustomEditor();renderSavedCustomTemplates();renderCategoryColors();render()}
+function addCustomCategory(){
+ const name=$('newCategoryName').value.trim();if(!name)return alert('Enter a category name.');
+ if(CUSTOM_CATEGORIES.length>=10)return alert('Custom Template supports up to 10 categories.');
+ if(CUSTOM_CATEGORIES.some(x=>x.name.toLowerCase()===name.toLowerCase()))return alert('Category names must be unique.');
+ syncInputs();save();CUSTOM_CATEGORIES.push({name,color:CATEGORY_PALETTE[CUSTOM_CATEGORIES.length%CATEGORY_PALETTE.length],side:$('newCategorySide').value});$('newCategoryName').value='';applyCustomChanges();
+}
+function updateCustomCategory(i,key,value){
+ if(key==='name'){value=value.trim();if(!value)return alert('Category name cannot be blank.');if(CUSTOM_CATEGORIES.some((x,j)=>j!==i&&x.name.toLowerCase()===value.toLowerCase()))return alert('Category names must be unique.');}
+ syncInputs();save();const old=CUSTOM_CATEGORIES[i].name;CUSTOM_CATEGORIES[i][key]=value;
+ if(key==='name')D.forEach(row=>{if(row[0]===old)row[0]=value});
+ applyCustomChanges();
+}
+function removeCustomCategory(i){
+ if(CUSTOM_CATEGORIES.length<=2)return alert('At least 2 categories are required.');
+ const name=CUSTOM_CATEGORIES[i].name;if(D.some(row=>row[0]===name&&row.slice(1).some(v=>String(v).trim())))if(!confirm('This category contains worksheet data. Remove it and its rows?'))return;
+ syncInputs();save();D.forEach(row=>{if(row[0]===name)row[0]=''});CUSTOM_CATEGORIES.splice(i,1);applyCustomChanges();
+}
+function moveCustomCategory(i,delta){const j=i+delta;if(j<0||j>=CUSTOM_CATEGORIES.length)return;syncInputs();save();[CUSTOM_CATEGORIES[i],CUSTOM_CATEGORIES[j]]=[CUSTOM_CATEGORIES[j],CUSTOM_CATEGORIES[i]];applyCustomChanges()}
+const CUSTOM_TEMPLATE_STORAGE_KEY='fishboneCustomTemplatesV251';
+function readCustomTemplates(){try{const v=JSON.parse(localStorage.getItem(CUSTOM_TEMPLATE_STORAGE_KEY)||'[]');return Array.isArray(v)?v:[]}catch(e){return[]}}
+function writeCustomTemplates(list){try{localStorage.setItem(CUSTOM_TEMPLATE_STORAGE_KEY,JSON.stringify(list));return true}catch(e){alert('Unable to save templates in this browser. Storage may be full or disabled.');return false}}
+function renderSavedCustomTemplates(){
+ const host=$('savedCustomTemplates');if(!host)return;
+ const list=readCustomTemplates();
+ if(!list.length){host.innerHTML='<div class="hint">No saved templates yet.</div>';return}
+ host.innerHTML=list.map((t,i)=>`<div style="display:grid;grid-template-columns:minmax(130px,1fr) auto auto auto auto;gap:6px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><div><strong>${esc(t.name)}</strong><div class="hint">${t.categories.length} categories · ${t.categories.filter(c=>c.side==='Top').length} Top / ${t.categories.filter(c=>c.side==='Bottom').length} Bottom</div></div><button onclick="loadCustomTemplate(${i})">Load</button><button onclick="renameCustomTemplate(${i})">Rename</button><button onclick="duplicateCustomTemplate(${i})">Copy</button><button onclick="deleteCustomTemplate(${i})">Delete</button></div>`).join('');
+}
+function saveCustomTemplate(){
+ if($('template').value!=='custom')return alert('Select Custom template before saving.');
+ const name=$('customTemplateName').value.trim();if(!name)return alert('Enter a template name.');
+ syncInputs();const list=readCustomTemplates();if(list.some(t=>t.name.toLowerCase()===name.toLowerCase()))return alert('A template with this name already exists. Use Rename or choose another name.');
+ list.push({name,categories:CUSTOM_CATEGORIES.map(c=>({...c})),savedAt:new Date().toISOString()});
+ if(writeCustomTemplates(list)){$('customTemplateName').value='';renderSavedCustomTemplates();alert('Custom template saved.')}
+}
+function loadCustomTemplate(i){
+ const list=readCustomTemplates(),t=list[i];if(!t)return;
+ const hasData=D.some(row=>row.slice(1).some(v=>String(v??'').trim()));
+ if(hasData&&!confirm('Loading this template will replace the current worksheet and its causes. Continue?'))return;
+ syncInputs();save();CUSTOM_CATEGORIES=t.categories.map(c=>({...c}));$('template').value='custom';R=DEFAULT_ROWS;C=DEFAULT_COLS;D=Array.from({length:R},()=>Array(C).fill(''));getCategories().forEach((cat,j)=>D[j][0]=cat);
+ renderCustomEditor();renderSavedCustomTemplates();renderCategoryColors();render();
+}
+function renameCustomTemplate(i){
+ const list=readCustomTemplates(),t=list[i];if(!t)return;const name=prompt('Enter a new template name:',t.name);if(name===null)return;const clean=name.trim();if(!clean)return alert('Template name cannot be blank.');if(list.some((x,j)=>j!==i&&x.name.toLowerCase()===clean.toLowerCase()))return alert('A template with this name already exists.');list[i].name=clean;if(writeCustomTemplates(list))renderSavedCustomTemplates();
+}
+function duplicateCustomTemplate(i){
+ const list=readCustomTemplates(),t=list[i];if(!t)return;let name=t.name+' Copy';let n=2;while(list.some(x=>x.name.toLowerCase()===name.toLowerCase()))name=t.name+' Copy '+n++;
+ list.push({name,categories:t.categories.map(c=>({...c})),savedAt:new Date().toISOString()});if(writeCustomTemplates(list))renderSavedCustomTemplates();
+}
+function deleteCustomTemplate(i){
+ const list=readCustomTemplates(),t=list[i];if(!t||!confirm('Delete saved template "'+t.name+'"?'))return;list.splice(i,1);if(writeCustomTemplates(list))renderSavedCustomTemplates();
+}
+function downloadJSONFile(payload,filename){
+ const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function exportCustomTemplate(){
+ if($('template').value!=='custom')return alert('Select Custom template before exporting.');
+ const name=$('customTemplateName').value.trim()||'Custom Fishbone Template';
+ downloadJSONFile({app:'Fishbone Diagram Analyzer Custom Template',formatVersion:1,name,categories:CUSTOM_CATEGORIES.map(c=>({...c}))},name.replace(/[^a-z0-9_-]+/gi,'-')+'.json');
+}
+function importCustomTemplate(event){
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ const reader=new FileReader();reader.onload=()=>{
+  try{
+   const obj=JSON.parse(reader.result),cats=obj.categories;
+   if(!Array.isArray(cats)||cats.length<2||cats.length>10)throw new Error('Template must contain 2–10 categories.');
+   const clean=cats.map(c=>({name:String(c.name||'').trim(),color:/^#[0-9a-f]{6}$/i.test(c.color)?c.color:'#64748B',side:c.side==='Bottom'?'Bottom':'Top'}));
+   if(clean.some(c=>!c.name)||new Set(clean.map(c=>c.name.toLowerCase())).size!==clean.length)throw new Error('Category names must be non-empty and unique.');
+   const name=String(obj.name||file.name.replace(/\.json$/i,'')).trim()||'Imported Template';
+   const list=readCustomTemplates();if(list.some(t=>t.name.toLowerCase()===name.toLowerCase()))throw new Error('A template with this name already exists. Rename the existing template first.');
+   list.push({name,categories:clean,savedAt:new Date().toISOString()});
+   if(writeCustomTemplates(list)){renderSavedCustomTemplates();$('customTemplateName').value=name;alert('Template imported and added to Saved Custom Templates. Load it when ready.')}
+  }catch(e){alert('Import failed: '+e.message)}
+  event.target.value='';
+ };reader.readAsText(file);
+}
+function render(){let x='<table><thead><tr><th class="corner" onclick="selectAll()">↘</th>';H.forEach((h,c)=>x+=`<th class="col-head" data-c="${c}"><div class="colname">${esc(h)}</div></th>`);x+='</tr></thead><tbody>';
+D.forEach((row,r)=>{x+=`<tr><th class="rowhead" onclick="selectRow(${r})">${r+1}</th>`;row.forEach((v,c)=>{let content=c===0?`<select data-r="${r}" data-c="${c}" onfocus="beginCellEdit(this,${r},${c})" onchange="editCell(this)" onkeydown="navigate(event,this)"><option value="" ${v===''?'selected':''}>Select category</option>${getCategories().map(cat=>`<option value="${esc(cat)}" ${v===cat?'selected':''}>${esc(cat)}</option>`).join('')}</select>`:c===3?`<select data-r="${r}" data-c="${c}" onfocus="beginCellEdit(this,${r},${c})" onchange="editCell(this)" onkeydown="navigate(event,this)"><option value="" ${v===''?'selected':''}></option><option ${v==='High'?'selected':''}>High</option><option ${v==='Medium'?'selected':''}>Medium</option><option ${v==='Low'?'selected':''}>Low</option></select>`:c===4?`<select data-r="${r}" data-c="${c}" onfocus="beginCellEdit(this,${r},${c})" onchange="editCell(this)" onkeydown="navigate(event,this)"><option value="Both" ${(!v||v==='Both')?'selected':''}>Both</option><option value="Left" ${v==='Left'?'selected':''}>Left</option><option value="Right" ${v==='Right'?'selected':''}>Right</option></select>`:`<input value="${esc(v)}" data-r="${r}" data-c="${c}" onfocus="beginCellEdit(this,${r},${c})" oninput="editCellLive(this)" onkeydown="navigate(event,this)" onpaste="pasteCells(event,this)">`;x+=`<td class="cell" data-r="${r}" data-c="${c}" onmousedown="startSelection(event,${r},${c})" onmouseenter="extendSelection(${r},${c})" onclick="cellClick(event,${r},${c})">${content}</td>`});x+='</tr>'});x+='</tbody></table>';$('sheet').innerHTML=x;$('statusText').textContent=`${R} rows × ${C} columns`;$('selectionInfo').textContent=`Selected: Row 1 / ${H[0]}`;paintSelection();updateUndo();drawDiagram()}
+function beginCellEdit(input,r,c){const key=`${r}:${c}`;if(editingCellKey!==key){save();editingCellKey=key}selectionStart={r,c};selectionEnd={r,c};paintSelection()}
+function editCellLive(input){const r=+input.dataset.r,c=+input.dataset.c;if(r>=0&&r<R&&c<C){D[r][c]=input.value;drawDiagram()}}
+function editCell(input){const r=+input.dataset.r,c=+input.dataset.c;D[r][c]=input.value;drawDiagram()}
+function syncInputs(){document.querySelectorAll('#sheet input[data-r][data-c],#sheet select[data-r][data-c]').forEach(i=>D[+i.dataset.r][+i.dataset.c]=i.value)}
+function paintSelection(){document.querySelectorAll('.selected-cell').forEach(e=>e.classList.remove('selected-cell'));const q=normalize();for(let r=q.r1;r<=q.r2;r++)for(let c=q.c1;c<=q.c2;c++){let el=document.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);if(el)el.classList.add('selected-cell')}$('selectionInfo').textContent=`Selected: R${q.r1+1}:R${q.r2+1} × C${q.c1+1}:C${q.c2+1}`}
+function startSelection(e,r,c){if(e.button!==0)return;isSelecting=true;selectionStart={r,c};selectionEnd={r,c};paintSelection()}
+function extendSelection(r,c){if(isSelecting){selectionEnd={r,c};paintSelection()}}
+function cellClick(e,r,c){if(e.shiftKey){selectionEnd={r,c};paintSelection()}const i=document.querySelector(`#sheet [data-r="${r}"][data-c="${c}"]`);if(i)i.focus()}
+document.addEventListener('mouseup',()=>isSelecting=false);
+function focusCell(r,c,caret='start'){
+ r=Math.max(0,Math.min(R-1,r));c=Math.max(0,Math.min(C-1,c));
+ selectionStart={r,c};selectionEnd={r,c};paintSelection();
+ const el=document.querySelector(`#sheet input[data-r="${r}"][data-c="${c}"],#sheet select[data-r="${r}"][data-c="${c}"]`);
+ if(el){
+   el.focus();
+   if(el.tagName==='INPUT'){
+     const pos=caret==='end'?el.value.length:0;
+     try{el.setSelectionRange(pos,pos)}catch(_){}
+   }
+ }
+}
+function navigate(e,i){
+ const r=+i.dataset.r,c=+i.dataset.c;let nr=r,nc=c,move=false,caret='start';
+ const isSelect=i.tagName==='SELECT';
+ if(e.key==='Enter'){
+   e.preventDefault();nr=Math.min(R-1,r+(e.shiftKey?-1:1));move=true;caret='start';
+ } else if(e.key==='Tab'){
+   e.preventDefault();nc=Math.max(0,Math.min(C-1,c+(e.shiftKey?-1:1)));move=true;caret='start';
+ } else if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+   if(isSelect||e.key==='ArrowUp'||(i.selectionStart===i.value.length&&i.selectionEnd===i.value.length)){
+     e.preventDefault();nr=Math.max(0,Math.min(R-1,r+(e.key==='ArrowUp'?-1:1)));move=true;caret='start';
+   }
+ } else if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+   if(isSelect){
+     e.preventDefault();nc=Math.max(0,Math.min(C-1,c+(e.key==='ArrowLeft'?-1:1)));move=true;caret=e.key==='ArrowLeft'?'end':'start';
+   } else {
+     const len=i.value.length,a=i.selectionStart,b=i.selectionEnd;
+     const empty=len===0;
+     const atEdge=e.key==='ArrowLeft'?(a===0&&b===0):(a===len&&b===len);
+     if(empty||atEdge){
+       e.preventDefault();nc=Math.max(0,Math.min(C-1,c+(e.key==='ArrowLeft'?-1:1)));
+       move=nc!==c;caret=e.key==='ArrowLeft'?'end':'start';
+     }
+   }
+ }
+ if(move)focusCell(nr,nc,caret);
+}
+function pasteCells(e,input){const raw=(e.clipboardData||window.clipboardData)?.getData('text/plain');if(!raw)return;e.preventDefault();save();syncInputs();const sr=+input.dataset.r,sc=+input.dataset.c,lines=raw.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');if(lines.at(-1)==='')lines.pop();const mat=lines.map(l=>l.split('\t'));while(R<sr+mat.length){D.push(Array(C).fill(''));R++}const need=sc+Math.max(...mat.map(a=>a.length));while(C<need){C++;H.push('Column '+C);D.forEach(row=>row.push(''))}mat.forEach((row,ri)=>row.forEach((v,ci)=>D[sr+ri][sc+ci]=v));selectionStart={r:sr,c:sc};selectionEnd={r:sr+mat.length-1,c:need-1};render();$('statusText').textContent=`Pasted ${mat.length} row(s)`}
+document.addEventListener('copy',e=>{if(!document.activeElement?.closest('#sheet'))return;syncInputs();const q=normalize(),rows=[];for(let r=q.r1;r<=q.r2;r++)rows.push(D[r].slice(q.c1,q.c2+1).join('\t'));e.clipboardData.setData('text/plain',rows.join('\n'));e.preventDefault()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='y'){e.preventDefault();redo()}if((e.key==='Delete'||e.key==='Backspace')&&document.activeElement?.closest('#sheet')){const q=normalize();if(q.r1!==q.r2||q.c1!==q.c2){e.preventDefault();clearSelectedRange()}}});
+function selectRow(r){selectionStart={r,c:0};selectionEnd={r,c:C-1};paintSelection()}function selectAll(){selectionStart={r:0,c:0};selectionEnd={r:R-1,c:C-1};paintSelection()}
+function addRow(){syncInputs();save();D.push(Array(C).fill(''));R++;render()}
+function delRow(){if(R<=1)return;syncInputs();save();D.pop();R--;render()}
+function clearSelectedRange(){syncInputs();const q=normalize();save();for(let r=q.r1;r<=q.r2;r++)for(let c=q.c1;c<=q.c2;c++)D[r][c]='';render()}
+function clearAll(){syncInputs();save();D=Array.from({length:R},()=>Array(C).fill(''));render()}
+function applyTemplate(){
+ const t=$('template').value;syncInputs();save();
+ if(t==='custom'){
+   if(CUSTOM_CATEGORIES.length<2)CUSTOM_CATEGORIES=[{name:'Category 1',color:'#3182CE',side:'Top'},{name:'Category 2',color:'#0D9488',side:'Bottom'}];
+ }else if(!TEMPLATES[t]){$('template').value='6M';return}
+ R=DEFAULT_ROWS;C=DEFAULT_COLS;D=Array.from({length:R},()=>Array(C).fill(''));
+ getCategories().forEach((cat,i)=>D[i][0]=cat);
+ renderCustomEditor();renderSavedCustomTemplates();renderCategoryColors();render();
+}
+function loadDemo(templateKey){
+ const selected=templateKey||$('template').value||'6M';
+ if(selected==='custom'){alert('Custom Template has no preset demo. Add your own causes in the Worksheet.');return}
+ if(!TEMPLATES[selected]){alert('Please select 6M, 4M or 8P template.');return}
+ syncInputs();save();
+ R=DEFAULT_ROWS;C=DEFAULT_COLS;
+ D=Array.from({length:R},()=>Array(C).fill(''));
+ const demos={
+ '6M':[
+ ['Man','Operator training is insufficient','New operators not fully certified','High','Both','Training record review'],
+ ['Man','Work instruction is not followed','Critical step skipped','Medium','Both',''],
+ ['Man','Staffing level is insufficient','High workload during peak shift','Medium','Both',''],
+ ['Man','Operator fatigue increases','Long working hours','Low','Both',''],
+ ['Man','Skill matrix is not updated','New process not included','Medium','Both',''],
+ ['Machine','Embedding machine alignment drifts','Guide rail wear','High','Both','Check alignment log'],
+ ['Machine','Sensor detection is unstable','Sensor contamination','Medium','Both',''],
+ ['Machine','Preventive maintenance is delayed','Maintenance plan not followed','Medium','Both',''],
+ ['Machine','Machine speed fluctuates','Drive parameter variation','Low','Both',''],
+ ['Machine','Tooling wear is excessive','Replacement interval exceeded','Medium','Both',''],
+ ['Material','Incoming PC sheet thickness varies','Supplier lot variation','Medium','Both',''],
+ ['Material','Adhesive viscosity is out of range','Material storage condition','Medium','Both',''],
+ ['Material','Raw material contamination occurs','Packaging not sealed','High','Both',''],
+ ['Material','Material shelf life is exceeded','FIFO not followed','Low','Both',''],
+ ['Material','Material batch properties vary','Supplier process variation','Medium','Both',''],
+ ['Method','Process parameters are not standardized','Different setup by shift','High','Both',''],
+ ['Method','Inspection frequency is insufficient','Sampling plan not followed','Low','Both',''],
+ ['Method','Work sequence is inconsistent','Standard operation not followed','Medium','Both',''],
+ ['Method','Changeover procedure is unclear','Setup checklist incomplete','Low','Both',''],
+ ['Method','Process control plan is outdated','Revision not communicated','Low','Both',''],
+ ['Measurement','Gauge calibration is overdue','Calibration interval missed','Low','Both',''],
+ ['Measurement','Measurement method varies','Different technique by operator','Medium','Both',''],
+ ['Measurement','Gauge resolution is inadequate','Resolution too coarse','Medium','Both',''],
+ ['Measurement','Measurement records are incomplete','Manual entry omitted','Low','Both',''],
+ ['Measurement','MSA is not performed regularly','GR&R study overdue','Medium','Both',''],
+ ['Mother Nature / Environment','Temperature fluctuates','Air conditioning instability','Low','Both',''],
+ ['Mother Nature / Environment','Humidity is outside target range','HVAC control variation','Medium','Both',''],
+ ['Mother Nature / Environment','Dust level is excessive','Area cleaning insufficient','Medium','Both',''],
+ ['Mother Nature / Environment','Lighting is inadequate','Workstation illumination low','Low','Both',''],
+ ['Mother Nature / Environment','External vibration affects process','Nearby equipment operation','Low','Both','']
+ ],
+ '4M':[
+ ['Man','Operator training is insufficient','New operators not fully qualified','High','Both','Training matrix review'],
+ ['Man','Operator fatigue increases','Long working hours','Medium','Both',''],
+ ['Man','Work instruction is misunderstood','Insufficient training','Medium','Both',''],
+ ['Machine','Machine alignment is unstable','Guide rail wear','High','Both','Alignment check'],
+ ['Machine','Sensor detection is inconsistent','Sensor contamination','Medium','Both',''],
+ ['Machine','Preventive maintenance is overdue','PM schedule not followed','Medium','Both',''],
+ ['Method','Process parameters are not standardized','Different setup by shift','High','Both',''],
+ ['Method','Inspection frequency is insufficient','Sampling plan not followed','Medium','Both',''],
+ ['Method','Changeover procedure is unclear','Setup checklist incomplete','Low','Both',''],
+ ['Material','Incoming material thickness varies','Supplier lot variation','High','Both','Incoming inspection'],
+ ['Material','Material contamination occurs','Packaging not sealed','Medium','Both',''],
+ ['Material','Material shelf life is exceeded','FIFO not followed','Low','Both','']
+ ],
+ '8P':[
+ ['Product','Product design is difficult to manufacture','Tight dimensional tolerance','High','Both','Design review'],
+ ['Product','Product specification is unclear','Requirement not fully defined','Medium','Both',''],
+ ['Product','Product variation is high','Design robustness is insufficient','Medium','Both',''],
+ ['Price','Material cost is increasing','Supplier price adjustment','Medium','Both','Cost review'],
+ ['Price','Low-cost sourcing affects quality','Supplier selection focuses on price','High','Both',''],
+ ['Price','Budget for maintenance is insufficient','Cost reduction target','Low','Both',''],
+ ['Place','Delivery location is difficult to access','Logistics route limitation','Low','Both',''],
+ ['Place','Storage conditions are unsuitable','Warehouse environment variation','High','Both',''],
+ ['Place','Distribution lead time is too long','Transport planning issue','Medium','Both',''],
+ ['Promotion','Product promotion is inconsistent','Campaign plan not standardized','Low','Both',''],
+ ['Promotion','Customer information is incomplete','Communication materials unclear','Medium','Both',''],
+ ['Promotion','Market feedback is not collected','No structured feedback channel','Medium','Both',''],
+ ['People','Staff competency is insufficient','Training plan is incomplete','High','Both',''],
+ ['People','Roles and responsibilities are unclear','Ownership not defined','Medium','Both',''],
+ ['People','Communication between teams is poor','Handover process is weak','Medium','Both',''],
+ ['Process','Work process is not standardized','Different practices by team','High','Both',''],
+ ['Process','Process monitoring is insufficient','Control plan not followed','Medium','Both',''],
+ ['Process','Corrective actions are delayed','Follow-up ownership unclear','Medium','Both',''],
+ ['Physical Evidence','Work area is not organized','Visual management is insufficient','Medium','Both',''],
+ ['Physical Evidence','Equipment condition is not identified','Status labels are missing','Low','Both',''],
+ ['Physical Evidence','Work instructions are not visible','Document display is inadequate','Medium','Both',''],
+ ['Productivity','Equipment utilization is low','Frequent minor stoppages','High','Both',''],
+ ['Productivity','Production output is unstable','Cycle time variation','Medium','Both',''],
+ ['Productivity','Rework consumes production capacity','Defect rate is high','High','Both','']
+ ]
+ };
+ const rows=demos[selected]||[];
+ rows.forEach((row,i)=>D[i]=row);
+ $('template').value=selected;
+ renderCategoryColors();
+ $('problem').value=selected==='8P'?'Low Business Performance':selected==='4M'?'High Manufacturing Defect Rate':'High Defect rate in Card process';
+ $('diagramTitle').value=selected+' – Cause & Effect Analysis';
+ render();
+}
+function resetAll(){syncInputs();save();R=DEFAULT_ROWS;C=DEFAULT_COLS;D=Array.from({length:R},()=>Array(C).fill(''));TEMPLATES['6M'].forEach((v,i)=>D[i][0]=v);$('template').value='6M';renderCategoryColors();$('problem').value='';$('diagramTitle').value='Cause & Effect Analysis';render()}
+const CATEGORY_PALETTE=['#2474C6','#12A0A8','#D97706','#7C55B8','#29965A','#D14C67','#64748B','#A16207'];
+function renderCategoryColors(){
+ const cats=getCategories(),host=$('categoryColors');if(!host)return;
+ host.innerHTML=cats.map((cat,i)=>{
+  const custom=$('template').value==='custom';
+  const color=custom?CUSTOM_CATEGORIES[i].color:CATEGORY_PALETTE[i%CATEGORY_PALETTE.length];
+  const change=custom?`onchange="updateCustomCategory(${i},'color',this.value)"`:'onchange="drawDiagram()"';
+  return `<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text)">${esc(cat)} <input type="color" id="catColor${i}" value="${color}" ${change} style="width:34px;height:30px;padding:2px"></label>`;
+ }).join('');
+}
+function drawDiagram(){
+ const svg=$('fishbone'),problem=$('problem').value.trim()||'Problem / Effect',title=$('diagramTitle').value.trim()||'Cause & Effect Analysis';
+ const spine=$('spineColor').value,causeColor=$('causeColor').value,effect=$('effectColor').value,bg=$('diagramBg').value;
+ const font=+$('causeFontSize').value||18,effectFont=+$('effectFontSize')?.value||20,spacing=$('causeSpacing').value,shape=$('headShape').value,angle=+$('branchAngle').value||45;
+ const rowGap=spacing==='compact'?8:spacing==='wide'?30:18,lineH=font+5;
+ const categories=getCategories();
+ const canonical=s=>{const x=String(s||'').trim().toLowerCase();if(['environment','mother nature','mother nature/environment','mother nature / environment'].includes(x))return 'Mother Nature / Environment';return String(s||'').trim()};
+ const groups=categories.map((name,i)=>({name,idx:i,side:$('template').value==='custom'?CUSTOM_CATEGORIES[i].side:null,causes:[],color:($('catColor'+i)?.value||($('template').value==='custom'?CUSTOM_CATEGORIES[i].color:CATEGORY_PALETTE[i%CATEGORY_PALETTE.length]))}));
+ D.forEach(row=>{
+   const cat=canonical(row[0]),main=String(row[1]||'').trim(),sub=String(row[2]||'').trim(),priority=String(row[3]||'').trim(),side=['Left','Right','Both'].includes(row[4])?row[4]:'Both';
+   if(!main)return;
+   const g=groups.find(x=>canonical(x.name).toLowerCase()===cat.toLowerCase());
+   // Number causes independently inside each category, preserving worksheet order.
+   if(g)g.causes.push({main,sub,priority,side,seq:g.causes.length+1});
+ });
+ const isSix=$('template').value==='6M';
+ const topGroups=$('template').value==='custom'?groups.filter(g=>g.side==='Top'):(isSix?groups.slice(0,3):groups.slice(0,Math.ceil(groups.length/2)));
+ const bottomGroups=$('template').value==='custom'?groups.filter(g=>g.side==='Bottom'):(isSix?groups.slice(3):groups.slice(Math.ceil(groups.length/2)));
+ // Estimate the busiest side of each category. Both causes are split across the two sides.
+ const maxLaneCount=Math.max(1,...groups.map(g=>{
+   const left=g.causes.filter(c=>c.side==='Left').length;
+   const right=g.causes.filter(c=>c.side==='Right').length;
+   const both=g.causes.filter(c=>c.side==='Both').length;
+   return Math.max(left+Math.ceil(both/2),right+Math.floor(both/2));
+ }));
+ const tailX=55,headW=280,headH=260;
+ // V2.4.15: preserve the V2.4.12 tail proportions and V2.4.7 category spacing.
+ // The 65-degree branch is the reference for actual branch length. At 45/55 degrees,
+ // increase the horizontal projection to keep the same slanted branch length.
+ // The extra horizontal room is created between the tail and Man branch; all three
+ // category roots and the effect head move right together, preserving 600-unit spacing.
+ const baseRun=Math.min(560,230+Math.max(0,maxLaneCount-2)*58);
+ const referenceLength=baseRun/Math.cos(65*Math.PI/180);
+ const baseRise=referenceLength*Math.sin(angle*Math.PI/180);
+ // Expand branch span when a lane contains many causes; allow for up to two wrapped lines.
+ const requiredRise=260+Math.max(0,maxLaneCount-1)*(lineH*2+rowGap+8);
+ const rise=Math.max(baseRise,requiredRise);
+ const run=Math.round(rise/Math.tan(angle*Math.PI/180));
+ const shiftX=Math.max(0,run-baseRun);
+ const isEight=groups.length===8;const custom=$('template').value==='custom';const slots=custom?Math.max(topGroups.length,bottomGroups.length):isEight?4:3;const branchBases=Array.from({length:slots},(_,i)=>747+shiftX+i*600);const headX=custom?747+shiftX+(slots-1)*600+200:(isEight?2747:2147)+shiftX;const W=custom?headX+400:(isEight?3147:2547)+shiftX;
+ const colLeft=[70,670,1270],colWidth=540,laneGap=24,laneWidth=(colWidth-laneGap)/2;
+ const labelWidth=300,wrapChars=Math.max(18,Math.floor(labelWidth/(font*0.58)));
+ // Build balanced lanes once, then measure their rendered height before choosing the canvas size.
+ function makeLanes(g){
+   // Both = automatic alternating layout: odd sequence numbers on Left,
+   // even sequence numbers on Right. Explicit worksheet Left/Right remains respected.
+   const lanes=[[],[]];
+   g.causes.forEach(c=>{
+     // Lane 1 is the visual left side; lane 0 is the visual right side.
+     const lane=c.side==='Left'?1:c.side==='Right'?0:(c.seq%2===1?1:0);
+     lanes[lane].push(c);
+   });
+   return {lanes};
+ }
+ groups.forEach(g=>g.layout=makeLanes(g));
+ // Keep the spine centered; canvas height follows the adaptive branch span.
+ const spineY=rise+235;
+ const headY=spineY-headH/2;
+ const topStart=spineY-rise-175,bottomStart=spineY+rise+52;
+ const H=Math.max(1050,spineY+rise+210);
+ let s=`<rect width="${W}" height="${H}" fill="${bg}"/><text x="${W/2}" y="48" text-anchor="middle" font-size="30" font-weight="bold" fill="${causeColor}">${esc(title)}</text>`;
+ // Forked fish tail, backbone and effect head.
+ s+=`<path d="M ${tailX+78} ${spineY} L ${tailX} ${spineY-68} L ${tailX+22} ${spineY} L ${tailX} ${spineY+68} Z" fill="${spine}" stroke="${spine}" stroke-width="3" stroke-linejoin="round"/>`;
+ s+=`<line x1="${tailX+62}" y1="${spineY}" x2="${headX-24}" y2="${spineY}" stroke="${spine}" stroke-width="6" stroke-linecap="round"/>`;
+ if(shape==='fish'){
+   // Standard Fish head traced from the supplied reference: broad rounded rear,
+   // smooth convex top/bottom and a pointed nose. Tail remains a separate selectable diagram element.
+   s+=`<path d="M ${headX+8} ${headY+8}
+      C ${headX+48} ${headY-2}, ${headX+156} ${headY+47}, ${headX+headW-8} ${spineY-8}
+      Q ${headX+headW+7} ${spineY}, ${headX+headW-8} ${spineY+8}
+      C ${headX+156} ${headY+headH-47}, ${headX+48} ${headY+headH+2}, ${headX+8} ${headY+headH-8}
+      C ${headX-2} ${headY+headH-8}, ${headX+3} ${spineY+35}, ${headX+3} ${spineY}
+      C ${headX+3} ${spineY-35}, ${headX-2} ${headY+8}, ${headX+8} ${headY+8} Z"
+      fill="${effect}" stroke="${spine}" stroke-width="4" stroke-linejoin="round"/>`;
+ } else if(shape==='dshape'){
+   s+=`<path d="M ${headX} ${headY+12} L ${headX+headW/2} ${headY+12} A ${headW/2} ${headH/2-12} 0 0 1 ${headX+headW/2} ${headY+headH-12} L ${headX} ${headY+headH-12} Z" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ } else if(shape==='diamond'){
+   s+=`<polygon points="${headX+headW/2},${headY} ${headX+headW},${spineY} ${headX+headW/2},${headY+headH} ${headX},${spineY}" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ } else if(shape==='rounded'){
+   s+=`<rect x="${headX}" y="${headY+25}" width="${headW}" height="${headH-50}" rx="22" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ } else if(shape==='rectangle'){
+   s+=`<rect x="${headX}" y="${headY+25}" width="${headW}" height="${headH-50}" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ } else if(shape==='oval'){
+   s+=`<ellipse cx="${headX+headW/2}" cy="${spineY}" rx="${headW/2}" ry="${headH/2-10}" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ } else if(shape==='arrow'){
+   s+=`<polygon points="${headX},${headY+30} ${headX+headW-48},${headY+30} ${headX+headW},${spineY} ${headX+headW-48},${headY+headH-30} ${headX},${headY+headH-30}" fill="${effect}" stroke="${spine}" stroke-width="4"/>`;
+ }
+ const headTextWidth=shape==='diamond'?190:220;
+ const pLines=wrapText(problem,Math.max(10,Math.floor(headTextWidth/(effectFont*0.58)))).slice(0,5);
+ const effectLineH=effectFont+5;
+ pLines.forEach((t,i)=>s+=`<text x="${headX+headW/2}" y="${spineY+(i-(pLines.length-1)/2)*effectLineH+effectFont*0.35}" text-anchor="middle" font-size="${effectFont}" font-weight="bold" fill="#fff">${esc(t)}</text>`);
+ function renderGroup(g,slot,upper){
+   const baseX=branchBases[slot],tipX=baseX-run,tipY=upper?spineY-rise:spineY+rise,color=g.color;
+   s+=`<line x1="${baseX}" y1="${spineY}" x2="${tipX}" y2="${tipY}" stroke="${color}" stroke-width="5" stroke-linecap="round"/>`;
+   s+=`<text x="${tipX}" y="${upper?tipY-25:tipY+38}" text-anchor="middle" font-size="23" font-weight="bold" fill="${color}">${esc(g.name)}</text>`;
+   const lanes=g.layout.lanes;
+   const dx=baseX-tipX,dy=spineY-tipY,len=Math.hypot(dx,dy);
+   const nx=Math.abs(dy)/len,ny=(upper?-1:1)*(dx/len);
+   const labelWidth=300,normalOffset=115;
+   // V2.5.1: restore the V2.4.18 balanced alternating sequence.
+   // Every cause receives its own vertical position in worksheet order;
+   // odd/even causes alternate sides of the branch without forming paired rows.
+   // This avoids same-height label cards colliding across the two lanes.
+   const total=g.causes.length;
+   g.causes.forEach((c,index)=>{
+     const leftLane=1;
+     const rightLane=0;
+     const lane=c.side==='Left'?leftLane:c.side==='Right'?rightLane:(c.seq%2===1?leftLane:rightLane);
+     const firstY=upper?tipY+155:spineY+155;
+     const lastY=upper?spineY-155:tipY-155;
+     const targetY=total<=1?(firstY+lastY)/2:firstY+(lastY-firstY)*(index/(total-1));
+     const offset=normalOffset*(lane===0?1:-1);
+     // Compensate along the branch for the normal offset so the visible
+     // labels remain strictly top-to-bottom even when alternating sides.
+     const branchY=targetY-ny*offset;
+     const t=Math.max(0.04,Math.min(0.96,(branchY-tipY)/dy));
+     const px=tipX+dx*t,py=tipY+dy*t;
+     const x=px+nx*offset;
+     const y=targetY;
+     const txt=`${c.seq}. ${c.main}${c.sub?' — '+c.sub:''}`;
+     const lines=wrapText(txt,wrapChars);
+     const textHeight=(lines.length-1)*lineH;
+     const labelEnabled=$('labelBgEnabled')?.value==='on';
+     if(labelEnabled){
+       const mode=$('labelColorMode')?.value||'category';
+       const labelColor=mode==='custom'?($('labelBgColor')?.value||'#DCEEFF'):g.color;
+       const opacity=(+$('labelOpacity')?.value||24)/100;
+       const pad=+$('labelPadding')?.value||8;
+       const maxChars=Math.max(1,...lines.map(line=>line.length));
+       const boxW=Math.min(labelWidth,Math.max(font*3,maxChars*font*0.58))+pad*2;
+       const boxH=lines.length*lineH+pad*1.5;
+       const boxX=x-boxW/2,boxY=y-boxH/2-2;
+       const style=$('labelStyle')?.value||'rounded';
+       if(style==='highlight'){
+         s+=`<rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="2" fill="${labelColor}" fill-opacity="${opacity}"/>`;
+       }else{
+         const rx=style==='rectangle'?3:9;
+         s+=`<rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${rx}" fill="${labelColor}" fill-opacity="${opacity}" stroke="${labelColor}" stroke-opacity="${Math.min(1,opacity+0.22)}" stroke-width="1"/>`;
+       }
+     }
+     if(c.priority==='High')s+=`<circle cx="${x-labelWidth/2-8}" cy="${y-4}" r="4.5" fill="#dc2626"/>`;
+     lines.forEach((line,k)=>s+=`<text x="${x}" y="${y-textHeight/2+k*lineH}" text-anchor="middle" font-size="${font}" fill="${causeColor}">${esc(line)}</text>`);
+   });
+   if(!g.causes.length){
+     const cx=(tipX+baseX)/2+nx*96,cy=(tipY+spineY)/2+ny*96;
+     s+=`<text x="${cx}" y="${cy}" text-anchor="middle" font-size="${font}" fill="${causeColor}" opacity=".55">Add causes in worksheet</text>`;
+   }
+ }
+ topGroups.forEach((g,i)=>renderGroup(g,i,true));
+ bottomGroups.forEach((g,i)=>renderGroup(g,i,false));
+ s+=`<text x="${W/2}" y="${H-24}" text-anchor="middle" font-size="12" fill="${causeColor}" opacity=".65">Fishbone Diagram Analyzer V2.5.1 · Developed by Somchard</text>`;
+ svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.innerHTML=s;
+}
+function wrapText(t,n){let words=String(t).split(/\s+/),out=[],line='';words.forEach(w=>{if((line+' '+w).trim().length>n&&line){out.push(line);line=w}else line=(line+' '+w).trim()});if(line)out.push(line);return out}
+function svgBlob(){const source=$('fishbone').cloneNode(true);source.setAttribute('xmlns','http://www.w3.org/2000/svg');const xml=new XMLSerializer().serializeToString(source);return new Blob([xml],{type:'image/svg+xml;charset=utf-8'})}
+async function diagramCanvas(){const blob=svgBlob(),url=URL.createObjectURL(blob);try{const img=new Image();img.src=url;await new Promise((res,rej)=>{img.onload=res;img.onerror=rej});const vb=$('fishbone').viewBox.baseVal;const c=document.createElement('canvas');c.width=2400;c.height=Math.round(2400*vb.height/vb.width);const ctx=c.getContext('2d');ctx.fillStyle=$('diagramBg').value;ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0,c.width,c.height);return c}finally{URL.revokeObjectURL(url)}}
+async function copyDiagramImage(){try{const c=await diagramCanvas();const b=await new Promise((res,rej)=>c.toBlob(x=>x?res(x):rej(Error('PNG failed')),'image/png'));if(!navigator.clipboard||!window.ClipboardItem)throw Error('Clipboard image not supported');await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);$('imageStatus').textContent='Diagram copied as PNG. Paste into PowerPoint or another app.'}catch(e){$('imageStatus').textContent='Image clipboard is unavailable in this browser. Use Download Diagram PNG instead.'}}
+async function downloadDiagramImage(){try{const c=await diagramCanvas();const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='Fishbone-Diagram.png';a.click();$('imageStatus').textContent='Fishbone-Diagram.png download requested.'}catch(e){$('imageStatus').textContent='Could not create PNG. Please try again in Chrome.'}}
+function copyWorksheetData(){syncInputs();const q=normalize(),txt=Array.from({length:q.r2-q.r1+1},(_,i)=>D[q.r1+i].slice(q.c1,q.c2+1).join('\t')).join('\n');navigator.clipboard?.writeText(txt).then(()=>$('imageStatus').textContent='Selected worksheet data copied.').catch(()=>fallbackCopy(txt))}
+function fallbackCopy(t){const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}
+function exportCSV(){syncInputs();const rows=[['Row',...H],...D.map((r,i)=>[i+1,...r])];const csv='\ufeff'+rows.map(row=>row.map(v=>'\"'+String(v??'').replace(/\"/g,'\"\"')+'\"').join(',')).join('\r\n');const b=new Blob([csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='Fishbone-Diagram-Data.csv';a.click();URL.revokeObjectURL(u)}
+function exportJSON(){syncInputs();const payload={app:'Fishbone Diagram Analyzer',version:'V2.5.1',problem:$('problem').value,template:$('template').value,customCategories:CUSTOM_CATEGORIES,headers:H,data:D};const b=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='Fishbone-Diagram-Data.json';a.click();URL.revokeObjectURL(u)}
+initData();TEMPLATES['6M'].forEach((v,i)=>D[i][0]=v);renderCategoryColors();renderCustomEditor();renderSavedCustomTemplates();drawDiagram();render();try{setTheme(localStorage.getItem('fishboneTheme')||'blue')}catch(e){setTheme('blue')}
+</script></body></html>
